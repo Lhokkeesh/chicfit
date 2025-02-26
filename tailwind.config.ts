@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
 
-export default {
+const config: Config = {
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -9,10 +9,28 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        primary: {
+          main: '#8b5cf6',
+          light: '#a78bfa',
+          dark: '#6d28d9',
+        },
+        secondary: {
+          main: '#bfa094',
+          light: '#d2bab0',
+          dark: '#a18072',
+        },
+      },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+        serif: ['Cormorant Garamond', 'serif'],
       },
     },
   },
   plugins: [],
-} satisfies Config;
+  // Important: Since we're using MUI, we need to make sure Tailwind doesn't conflict
+  corePlugins: {
+    preflight: false,
+  },
+};
+
+export default config;
