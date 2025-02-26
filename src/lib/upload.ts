@@ -48,4 +48,11 @@ const upload = multer({
   }
 });
 
-export default upload; 
+// Mock upload functionality for testing
+export const uploadFile = async (file: File): Promise<string> => {
+  // In a real application, this would upload to a storage service
+  // For testing, we'll just return a mock URL
+  return `https://mock-storage.example.com/${file.name}`;
+};
+
+export default uploadFile; 
