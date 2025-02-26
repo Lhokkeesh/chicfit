@@ -5,9 +5,11 @@ interface GlobalMongoose {
   promise: Promise<typeof mongoose> | null;
 }
 
-declare global {
-  var mongoose: GlobalMongoose | undefined;
+interface GlobalWithMongoose extends globalThis.Global {
+  mongoose: GlobalMongoose | undefined;
 }
+
+declare const global: GlobalWithMongoose;
 
 if (!process.env.MONGODB_URI) {
   throw new Error('Please add your MONGODB_URI to .env.local');

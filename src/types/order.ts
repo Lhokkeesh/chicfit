@@ -33,4 +33,16 @@ export interface Order {
   paymentMethod: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CreateOrderData {
+  items: Array<{
+    productId: string;
+    quantity: number;
+    price: number;
+    selectedSize?: string;
+    selectedColor?: string;
+  }>;
+  shippingAddress: ShippingAddress;
+  total: number;
 } 

@@ -182,13 +182,14 @@ export default function ReturnsPage() {
 
       // Show success message
       toast.success('Return request submitted successfully', {
-        duration: 2000,
-        onClose: () => {
-          // Navigate after the toast is shown
-          const confirmationUrl = `/returns/confirmation?id=${data.id}`;
-          window.location.href = confirmationUrl;
-        }
+        duration: 2000
       });
+      
+      // Navigate after the toast is shown
+      setTimeout(() => {
+        const confirmationUrl = `/returns/confirmation?id=${data.id}`;
+        window.location.href = confirmationUrl;
+      }, 2000);
     } catch (error: any) {
       console.error('Return submission error:', error);
       toast.error(error.message || 'Failed to submit return request');

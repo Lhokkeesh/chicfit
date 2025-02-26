@@ -1,4 +1,4 @@
-import { LoginCredentials, RegisterCredentials } from '@/types/auth';
+import { LoginCredentials, RegisterCredentials, User } from '@/types/auth';
 import { Product } from '@/types/product';
 import { Order, ShippingAddress, CreateOrderData } from '@/types/order';
 import { getSession } from 'next-auth/react';
@@ -9,8 +9,13 @@ interface CustomSession extends Session {
     id: string;
     email: string;
     name: string;
-    role: string;
+    role: 'user' | 'admin';
   };
+}
+
+interface AuthResponse {
+  user: User;
+  token: string;
 }
 
 interface ProductFormData {
@@ -32,12 +37,26 @@ interface CheckoutResponse {
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 class ApiService {
+  private token: string | null = null;
+
+  setToken(token: string) {
+    this.token = token;
+  }
+
+  clearToken() {
+    this.token = null;
+  }
+
   private async getAuthHeaders(): Promise<HeadersInit> {
-    const session = await getSession() as CustomSession | null;
-    return {
+    const headers: HeadersInit = {
       'Content-Type': 'application/json',
-      ...(session?.user && { Authorization: `Bearer ${session.user.id}` }),
     };
+
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+
+    return headers;
   }
 
   private async request<T>(
@@ -64,15 +83,15 @@ class ApiService {
   }
 
   // Auth endpoints
-  async register(credentials: RegisterCredentials) {
-    return this.request('/auth/register', {
+  async register(credentials: RegisterCredentials): Promise<AuthResponse> {
+    return this.request<AuthResponse>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
   }
 
-  async login(credentials: LoginCredentials) {
-    return this.request('/auth/login', {
+  async login(credentials: LoginCredentials): Promise<AuthResponse> {
+    return this.request<AuthResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });

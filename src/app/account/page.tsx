@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/useToast';
@@ -27,9 +27,13 @@ export default function AccountPage() {
     confirmPassword: '',
   });
 
-  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/auth/login?redirect=/account');
+    }
+  }, [isAuthenticated, router]);
+
   if (!isAuthenticated) {
-    router.push('/auth/login?redirect=/account');
     return null;
   }
 

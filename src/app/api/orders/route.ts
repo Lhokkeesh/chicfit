@@ -1,40 +1,38 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import Order from '@/models/Order';
-import { Session } from 'next-auth';
-import dbConnect from '@/lib/dbConnect';
+import type { Session as NextAuthSession } from 'next-auth';
+import Product from '@/models/Product';
 
 interface SessionUser {
   id: string;
-  email: string;
-  name: string;
-  role: string;
+  role: "user" | "admin";
 }
 
-interface Session {
+interface CustomSession extends NextAuthSession {
   user: SessionUser;
 }
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions) as Session;
+    const session = await getServerSession(authOptions) as CustomSession;
 
     if (!session?.user?.id) {
       return NextResponse.json(
-        { error: 'Authentication required' },
+        { error: 'You must be logged in to view orders.' },
         { status: 401 }
       );
     }
 
     await connectDB();
 
-    const orders = await Order.find({ user: session.user.id })
-      .populate('items.product')
-      .sort({ createdAt: -1 });
+    const orders = await Order.find({ userId: session.user.id })
+      .sort({ createdAt: -1 })
+      .populate('products.product');
 
-    return NextResponse.json({ orders });
+    return NextResponse.json(orders);
   } catch (error) {
     console.error('Error fetching orders:', error);
     return NextResponse.json(
@@ -46,56 +44,41 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    await connectDB();
+    const session = await getServerSession(authOptions) as CustomSession;
 
-    // Get user from request headers (set by middleware)
-    const userStr = request.headers.get('user');
-    if (!userStr) {
+    if (!session?.user?.id) {
       return NextResponse.json(
-        { error: 'Authentication required' },
+        { error: 'You must be logged in to create an order.' },
         { status: 401 }
       );
     }
 
-    const user = JSON.parse(userStr);
-    const orderData = await request.json();
+    const data = await request.json();
+    await connectDB();
 
-    // Validate and update product stock
-    for (const item of orderData.items) {
-      const product = await Product.findById(item.product);
-      if (!product) {
-        return NextResponse.json(
-          { error: `Product not found: ${item.product}` },
-          { status: 400 }
-        );
-      }
+    // Verify products exist and calculate total
+    const productIds = data.products.map((item: { productId: string }) => item.productId);
+    const products = await Product.find({ _id: { $in: productIds } });
 
-      if (product.stock < item.quantity) {
-        return NextResponse.json(
-          { error: `Insufficient stock for product: ${product.name}` },
-          { status: 400 }
-        );
-      }
-
-      // Update stock
-      await Product.findByIdAndUpdate(item.product, {
-        $inc: { stock: -item.quantity },
-      });
+    if (products.length !== productIds.length) {
+      return NextResponse.json(
+        { error: 'One or more products not found' },
+        { status: 400 }
+      );
     }
 
-    // Create order
     const order = await Order.create({
-      ...orderData,
-      user: user.id,
-      status: 'pending',
-      paymentStatus: 'pending',
+      userId: session.user.id,
+      products: data.products,
+      total: data.total,
+      status: 'pending'
     });
 
     return NextResponse.json(order);
-  } catch (error: any) {
-    console.error('Order creation error:', error);
+  } catch (error) {
+    console.error('Error creating order:', error);
     return NextResponse.json(
-      { error: error.message || 'Something went wrong' },
+      { error: 'Failed to create order' },
       { status: 500 }
     );
   }

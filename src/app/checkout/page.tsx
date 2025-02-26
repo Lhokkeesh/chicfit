@@ -102,12 +102,12 @@ export default function CheckoutPage() {
       // Create order
       const response = await api.createOrder({
         items: items.map((item) => ({
-          product: item._id,
+          productId: item._id,
           quantity: item.quantity,
+          price: item.price,
           selectedSize: item.selectedSize,
           selectedColor: item.selectedColor,
         })),
-        totalAmount: total,
         shippingAddress: {
           firstName: formData.firstName,
           lastName: formData.lastName,
@@ -117,7 +117,7 @@ export default function CheckoutPage() {
           country: formData.country,
           postalCode: formData.postalCode,
         },
-        paymentMethod: 'card',
+        total: total,
       });
 
       // Clear cart and redirect to success page
