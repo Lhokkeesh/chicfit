@@ -146,7 +146,7 @@ class ApiService {
 
   // Order endpoints
   async createOrder(orderData: CreateOrderData) {
-    const response = await fetch('/api/checkout', {
+    const response = await fetch('/api/orders', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

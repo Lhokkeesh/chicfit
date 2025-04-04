@@ -26,16 +26,21 @@ export default function ReviewSection({ productId }: ReviewSectionProps) {
   const [rating, setRating] = useState<number>(0);
   const [comment, setComment] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(true);
 
   const fetchReviews = async () => {
+    setIsLoadingReviews(true);
     try {
       const response = await fetch(`/api/products/${productId}/reviews`);
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
-      setReviews(data);
+      setReviews(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching reviews:', error);
       showToast('error', 'Failed to load reviews');
+      setReviews([]);
+    } finally {
+      setIsLoadingReviews(false);
     }
   };
 
@@ -117,7 +122,9 @@ export default function ReviewSection({ productId }: ReviewSectionProps) {
       )}
 
       <Box sx={{ mt: 4 }}>
-        {reviews.length === 0 ? (
+        {isLoadingReviews ? (
+          <Typography color="text.secondary">Loading reviews...</Typography>
+        ) : !Array.isArray(reviews) || reviews.length === 0 ? (
           <Typography color="text.secondary">No reviews yet</Typography>
         ) : (
           reviews.map((review) => (
@@ -147,4 +154,4 @@ export default function ReviewSection({ productId }: ReviewSectionProps) {
       </Box>
     </Box>
   );
-} 
+}

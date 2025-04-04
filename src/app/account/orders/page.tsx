@@ -36,34 +36,45 @@ const formatDate = (dateString: string) => {
 
 export default function OrdersPage() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    if (status === 'loading') return;
+    
     if (!session) {
       router.push('/auth/login?redirect=/account/orders');
       return;
     }
 
     const fetchOrders = async () => {
+      setIsLoading(true);
+      setError('');
       try {
         const response = await api.getOrders();
-        setOrders(response.orders);
+        setOrders(Array.isArray(response?.orders) ? response.orders : []);
       } catch (error) {
         console.error('Failed to fetch orders:', error);
         setError('Failed to load orders. Please try again later.');
+        setOrders([]);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchOrders();
-  }, [session, router]);
+  }, [session, router, status]);
 
-  if (!session) {
-    return null;
+  if (status === 'loading' || !session) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 8 }}>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+          <CircularProgress />
+        </Box>
+      </Container>
+    );
   }
 
   if (isLoading) {
@@ -106,7 +117,7 @@ export default function OrdersPage() {
         </Typography>
       </Box>
 
-      {orders.length === 0 ? (
+      {!Array.isArray(orders) || orders.length === 0 ? (
         <Paper elevation={0} sx={{ p: 4, textAlign: 'center' }}>
           <Typography variant="h6" gutterBottom>
             No orders found
